@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createStore } from '../src/store.js';
 import { runPollCycle } from '../src/poller.js';
+import { LABELS } from '../src/labelState.js';
 
 const WORK_HOURS = { startHour: 9, endHour: 19, timeZone: 'Europe/Moscow', workDays: [1, 2, 3, 4, 5] };
 // Wednesday 2026-08-19, 12:00 Moscow = 09:00 UTC (inside work hours)
@@ -48,7 +49,7 @@ function mr(overrides = {}) {
     url: 'https://git.example.com/mr/1',
     authorUsername: 'alice',
     reviewerUsername: 'bob',
-    labels: ['требуется ревью'],
+    labels: [LABELS.REVIEW_REQUESTED],
     draft: false,
     createdAt: '2026-08-19T08:00:00Z',
     ...overrides,
@@ -226,7 +227,7 @@ test('a notifier failure on one MR does not abort processing of the rest of the 
 
   const mrs = [
     mr({ iid: 1 }),
-    mr({ iid: 2, title: 'Second MR', url: 'https://git.example.com/mr/2', authorUsername: 'alice', reviewerUsername: null, labels: ['готово'] }),
+    mr({ iid: 2, title: 'Second MR', url: 'https://git.example.com/mr/2', authorUsername: 'alice', reviewerUsername: null, labels: [LABELS.DONE] }),
   ];
 
   await runPollCycle({

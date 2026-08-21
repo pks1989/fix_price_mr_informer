@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STATES, deriveMrState } from '../src/labelState.js';
+import { LABELS, STATES, deriveMrState } from '../src/labelState.js';
 
 const NOW = new Date('2026-08-19T12:00:00Z');
 const ALLOWED = ['alice', 'bob'];
@@ -26,37 +26,37 @@ test('MR with neither author nor reviewer allowed is skipped', () => {
 });
 
 test('draft MR is skipped even if labeled', () => {
-  const mr = baseMr({ draft: true, labels: ['требуется ревью'] });
+  const mr = baseMr({ draft: true, labels: [LABELS.REVIEW_REQUESTED] });
   const result = deriveMrState(mr, { allowedUsers: ALLOWED, now: NOW, noLabelGraceMs: 900000 });
   assert.deepEqual(result, { state: STATES.SKIP, responsibleUsername: null });
 });
 
-test('"требуется ревью" makes the reviewer responsible', () => {
-  const mr = baseMr({ labels: ['требуется ревью'] });
+test('the review-requested label makes the reviewer responsible', () => {
+  const mr = baseMr({ labels: [LABELS.REVIEW_REQUESTED] });
   const result = deriveMrState(mr, { allowedUsers: ALLOWED, now: NOW, noLabelGraceMs: 900000 });
   assert.deepEqual(result, { state: STATES.REVIEW_REQUESTED, responsibleUsername: 'bob' });
 });
 
-test('"ревью" has no responsible person', () => {
-  const mr = baseMr({ labels: ['ревью'] });
+test('the in-review label has no responsible person', () => {
+  const mr = baseMr({ labels: [LABELS.IN_REVIEW] });
   const result = deriveMrState(mr, { allowedUsers: ALLOWED, now: NOW, noLabelGraceMs: 900000 });
   assert.deepEqual(result, { state: STATES.IN_REVIEW, responsibleUsername: null });
 });
 
-test('"требуются уточнения" makes the author responsible', () => {
-  const mr = baseMr({ labels: ['требуются уточнения'] });
+test('the needs-changes label makes the author responsible', () => {
+  const mr = baseMr({ labels: [LABELS.NEEDS_CHANGES] });
   const result = deriveMrState(mr, { allowedUsers: ALLOWED, now: NOW, noLabelGraceMs: 900000 });
   assert.deepEqual(result, { state: STATES.NEEDS_CHANGES, responsibleUsername: 'alice' });
 });
 
-test('"готово" makes the reviewer responsible', () => {
-  const mr = baseMr({ labels: ['готово'] });
+test('the done label makes the reviewer responsible', () => {
+  const mr = baseMr({ labels: [LABELS.DONE] });
   const result = deriveMrState(mr, { allowedUsers: ALLOWED, now: NOW, noLabelGraceMs: 900000 });
   assert.deepEqual(result, { state: STATES.DONE, responsibleUsername: 'bob' });
 });
 
 test('conflicting labels resolve by done > needs_changes > in_review > review_requested', () => {
-  const mr = baseMr({ labels: ['требуется ревью', 'готово'] });
+  const mr = baseMr({ labels: [LABELS.REVIEW_REQUESTED, LABELS.DONE] });
   const result = deriveMrState(mr, { allowedUsers: ALLOWED, now: NOW, noLabelGraceMs: 900000 });
   assert.equal(result.state, STATES.DONE);
 });

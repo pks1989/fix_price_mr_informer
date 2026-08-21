@@ -1,8 +1,8 @@
 const LABELS = {
-  REVIEW_REQUESTED: 'требуется ревью',
-  IN_REVIEW: 'ревью',
-  NEEDS_CHANGES: 'требуются уточнения',
-  DONE: 'готово',
+  REVIEW_REQUESTED: 'Ожидает ревью',
+  IN_REVIEW: 'Ревью',
+  NEEDS_CHANGES: 'Требуются уточнения',
+  DONE: 'Готово',
 };
 
 const STATES = {
