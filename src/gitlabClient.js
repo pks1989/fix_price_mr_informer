@@ -18,6 +18,9 @@ async function fetchOpenMergeRequests({ baseUrl, token, projectPath, fetchImpl =
     throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
   }
   const raw = await response.json();
+  if (!Array.isArray(raw)) {
+    throw new Error('GitLab API error: unexpected response shape (expected an array)');
+  }
   return raw.map(mapApiMr);
 }
 

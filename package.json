@@ -4,6 +4,9 @@
   "description": "Telegram bot that highlights required actions for the GitLab MR review flow",
   "type": "module",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test"

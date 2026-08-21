@@ -13,7 +13,7 @@ function parseIntEnv(value, fallback) {
 function loadConfig(env = process.env) {
   return {
     telegramBotToken: env.TELEGRAM_BOT_TOKEN,
-    groupChatId: env.GROUP_CHAT_ID ? Number(env.GROUP_CHAT_ID) : null,
+    groupChatId: env.GROUP_CHAT_ID && Number.isFinite(Number(env.GROUP_CHAT_ID)) ? Number(env.GROUP_CHAT_ID) : null,
     gitlab: {
       baseUrl: env.GITLAB_BASE_URL,
       token: env.GITLAB_TOKEN,
