@@ -24,4 +24,17 @@ async function fetchOpenMergeRequests({ baseUrl, token, projectPath, fetchImpl =
   return raw.map(mapApiMr);
 }
 
-export { mapApiMr, fetchOpenMergeRequests };
+async function fetchCurrentUser({ baseUrl, token, fetchImpl = fetch }) {
+  const url = `${baseUrl}/api/v4/user`;
+  const response = await fetchImpl(url, { headers: { 'PRIVATE-TOKEN': token } });
+  if (!response.ok) {
+    throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
+  }
+  const raw = await response.json();
+  if (!raw?.username) {
+    throw new Error('GitLab API error: unexpected response shape (expected a user with a username)');
+  }
+  return { username: raw.username };
+}
+
+export { mapApiMr, fetchOpenMergeRequests, fetchCurrentUser };

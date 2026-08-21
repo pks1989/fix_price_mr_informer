@@ -16,7 +16,6 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
 
   for (const mr of mrs) {
     const derived = deriveMrState(mr, {
-      allowedUsers: config.allowedUsers,
       now,
       noLabelGraceMs: config.noLabelGraceMs,
     });

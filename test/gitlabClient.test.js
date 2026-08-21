@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapApiMr, fetchOpenMergeRequests } from '../src/gitlabClient.js';
+import { mapApiMr, fetchOpenMergeRequests, fetchCurrentUser } from '../src/gitlabClient.js';
 
 test('mapApiMr maps a full raw MR using reviewers', () => {
   const raw = {
@@ -100,5 +100,37 @@ test('fetchOpenMergeRequests throws when the response is not ok', async () => {
   await assert.rejects(
     () => fetchOpenMergeRequests({ baseUrl: 'https://git.example.com', token: 't', projectPath: 'g/p', fetchImpl }),
     /GitLab API error: 401 Unauthorized/,
+  );
+});
+
+test('fetchCurrentUser builds the correct URL and auth header, and returns the username', async () => {
+  let capturedUrl;
+  let capturedOptions;
+  const fetchImpl = async (url, options) => {
+    capturedUrl = url;
+    capturedOptions = options;
+    return { ok: true, json: async () => ({ id: 7, username: 'kpershin', name: 'K. Pershin' }) };
+  };
+
+  const me = await fetchCurrentUser({ baseUrl: 'https://git.example.com', token: 'secret-token', fetchImpl });
+
+  assert.equal(capturedUrl, 'https://git.example.com/api/v4/user');
+  assert.deepEqual(capturedOptions.headers, { 'PRIVATE-TOKEN': 'secret-token' });
+  assert.deepEqual(me, { username: 'kpershin' });
+});
+
+test('fetchCurrentUser throws when the response is not ok', async () => {
+  const fetchImpl = async () => ({ ok: false, status: 401, statusText: 'Unauthorized' });
+  await assert.rejects(
+    () => fetchCurrentUser({ baseUrl: 'https://git.example.com', token: 't', fetchImpl }),
+    /GitLab API error: 401 Unauthorized/,
+  );
+});
+
+test('fetchCurrentUser throws when the response has no username', async () => {
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ id: 7 }) });
+  await assert.rejects(
+    () => fetchCurrentUser({ baseUrl: 'https://git.example.com', token: 't', fetchImpl }),
+    /unexpected response shape/,
   );
 });

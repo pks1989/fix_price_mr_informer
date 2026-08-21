@@ -23,7 +23,6 @@ cp .env.example .env
 - `GITLAB_TOKEN` — личный access token с правом только на чтение
   (`read_api`) для `https://git.fix-price.ru`.
 - `GITLAB_PROJECT_PATH` — `android/fixprice_serbia`.
-- `ALLOWED_GITLAB_USERS` — GitLab-логины обоих вайбкодеров через запятую.
 
 ## Запуск
 
@@ -31,8 +30,8 @@ cp .env.example .env
 npm start
 ```
 
-Затем один раз написать боту `/start` в личке и прислать свой GitLab-логин
-по запросу — так бот узнаёт, куда слать уведомления.
+Затем один раз написать боту `/start` в личке — бот сам по токену узнаёт
+свой GitLab-логин и запоминает, куда слать уведомления.
 
 ## Автозапуск (systemd --user, без root)
 

@@ -13,7 +13,6 @@ const REMINDER_MS = 3 * 60 * 60 * 1000;
 function baseConfig() {
   return {
     gitlab: { baseUrl: 'https://git.example.com', token: 't', projectPath: 'g/p' },
-    allowedUsers: ['alice', 'bob'],
     noLabelGraceMs: 900000,
     reminderIntervalMs: REMINDER_MS,
   };

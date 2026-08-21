@@ -21,9 +21,8 @@ const ACTION_STATES = new Set([
   STATES.DONE,
 ]);
 
-function deriveMrState(mr, { allowedUsers, now, noLabelGraceMs }) {
-  const isRelevant = allowedUsers.includes(mr.authorUsername) || allowedUsers.includes(mr.reviewerUsername);
-  if (!isRelevant || mr.draft) {
+function deriveMrState(mr, { now, noLabelGraceMs }) {
+  if (mr.draft) {
     return { state: STATES.SKIP, responsibleUsername: null };
   }
 

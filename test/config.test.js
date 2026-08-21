@@ -1,11 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCsvList, parseIntEnv, loadConfig } from '../src/config.js';
-
-test('parseCsvList splits, trims and drops empties', () => {
-  assert.deepEqual(parseCsvList('a, b ,,c'), ['a', 'b', 'c']);
-  assert.deepEqual(parseCsvList(undefined), []);
-});
+import { parseIntEnv, loadConfig } from '../src/config.js';
 
 test('parseIntEnv parses valid integers and falls back otherwise', () => {
   assert.equal(parseIntEnv('42', 0), 42);
@@ -19,7 +14,6 @@ test('loadConfig reads and normalizes environment variables', () => {
     GITLAB_BASE_URL: 'https://git.example.com',
     GITLAB_TOKEN: 'gl-token',
     GITLAB_PROJECT_PATH: 'group/project',
-    ALLOWED_GITLAB_USERS: 'alice,bob',
     GROUP_CHAT_ID: '-100123',
     POLL_INTERVAL_MS: '60000',
     REMINDER_INTERVAL_MS: '3600000',
@@ -29,7 +23,6 @@ test('loadConfig reads and normalizes environment variables', () => {
 
   assert.equal(config.telegramBotToken, 'tg-token');
   assert.equal(config.groupChatId, -100123);
-  assert.deepEqual(config.allowedUsers, ['alice', 'bob']);
   assert.equal(config.gitlab.projectPath, 'group/project');
   assert.equal(config.pollIntervalMs, 60000);
   assert.equal(config.reminderIntervalMs, 3600000);

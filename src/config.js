@@ -1,10 +1,3 @@
-function parseCsvList(value) {
-  return (value ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
 function parseIntEnv(value, fallback) {
   const n = Number.parseInt(value, 10);
   return Number.isFinite(n) ? n : fallback;
@@ -19,7 +12,6 @@ function loadConfig(env = process.env) {
       token: env.GITLAB_TOKEN,
       projectPath: env.GITLAB_PROJECT_PATH,
     },
-    allowedUsers: parseCsvList(env.ALLOWED_GITLAB_USERS),
     pollIntervalMs: parseIntEnv(env.POLL_INTERVAL_MS, 180000),
     reminderIntervalMs: parseIntEnv(env.REMINDER_INTERVAL_MS, 1800000),
     noLabelGraceMs: parseIntEnv(env.NO_LABEL_GRACE_MS, 900000),
@@ -27,4 +19,4 @@ function loadConfig(env = process.env) {
   };
 }
 
-export { parseCsvList, parseIntEnv, loadConfig };
+export { parseIntEnv, loadConfig };
