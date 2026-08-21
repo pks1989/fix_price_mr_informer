@@ -163,3 +163,60 @@ test('an MR that disappears between cycles is logged as no longer tracked and re
   assert.equal(notifier.group.length, 1);
   assert.match(notifier.group[0], /больше не отслеживается/);
 });
+
+function throwingNotifier() {
+  const group = [];
+  return {
+    group,
+    notifyUser: async () => { throw new Error('blocked by user'); },
+    notifyGroup: async (text) => { group.push(text); },
+  };
+}
+
+test('a notifier failure on one MR does not abort processing of the rest of the cycle', async () => {
+  const store = tempStore();
+  store.setUser(999, 'bob');
+  const notifier = throwingNotifier();
+
+  const mrs = [
+    mr({ iid: 1 }),
+    mr({ iid: 2, title: 'Second MR', url: 'https://git.example.com/mr/2', authorUsername: 'alice', reviewerUsername: null, labels: ['готово'] }),
+  ];
+
+  await runPollCycle({
+    gitlabClient: fakeGitlabClient(mrs),
+    store,
+    notifier,
+    config: baseConfig(),
+    now: NOON_MOSCOW,
+  });
+
+  // First MR: notifyUser threw (caught by safeSend), but the cycle continued and
+  // still persisted state as if the send had been attempted (chatId was resolved).
+  assert.deepEqual(store.getMr('1'), { state: 'review_requested', lastReminderAt: NOON_MOSCOW.getTime(), title: 'Some MR', url: 'https://git.example.com/mr/1' });
+
+  // Second MR: unrelated, must still be processed normally (no responsible chatId -> lastReminderAt 0, done state).
+  assert.deepEqual(store.getMr('2'), { state: 'done', lastReminderAt: 0, title: 'Second MR', url: 'https://git.example.com/mr/2' });
+});
+
+test('a previously tracked MR that flips to draft (skip) is logged with a Russian label, not the raw "skip" string', async () => {
+  const store = tempStore();
+  store.setUser(999, 'bob');
+  const notifier = fakeNotifier();
+  const config = baseConfig();
+
+  await runPollCycle({ gitlabClient: fakeGitlabClient([mr()]), store, notifier, config, now: NOON_MOSCOW });
+  notifier.dms.length = 0;
+  notifier.group.length = 0;
+
+  await runPollCycle({
+    gitlabClient: fakeGitlabClient([mr({ draft: true })]),
+    store,
+    notifier,
+    config,
+    now: new Date(NOON_MOSCOW.getTime() + 60000),
+  });
+
+  assert.equal(notifier.group.length, 1);
+  assert.doesNotMatch(notifier.group[0], /\bskip\b/);
+});

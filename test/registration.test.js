@@ -24,10 +24,10 @@ function createFakeStore() {
   return { calls, setUser: (chatId, username) => calls.push([chatId, username]) };
 }
 
-function createFakeCtx(chatId, text) {
+function createFakeCtx(chatId, text, chatType = 'private') {
   const replies = [];
   return {
-    chat: { id: chatId },
+    chat: { id: chatId, type: chatType },
     message: text === undefined ? undefined : { text },
     reply: async (msg) => replies.push(msg),
     replies,
@@ -83,4 +83,28 @@ test('a second text message after registration is ignored (awaiting flag cleared
   await bot.handlers.text(ctx);
 
   assert.deepEqual(store.calls, [[1, 'alice']]);
+});
+
+test('/start is ignored in a non-private (group) chat', async () => {
+  const bot = createFakeBot();
+  const store = createFakeStore();
+  registerHandlers(bot, store);
+
+  const ctx = createFakeCtx(999, undefined, 'group');
+  await bot.handlers.start(ctx);
+
+  assert.deepEqual(ctx.replies, []);
+  assert.deepEqual(store.calls, []);
+});
+
+test('a text message in a non-private (group) chat is ignored', async () => {
+  const bot = createFakeBot();
+  const store = createFakeStore();
+  registerHandlers(bot, store);
+
+  const ctx = createFakeCtx(999, 'alice', 'group');
+  await bot.handlers.text(ctx);
+
+  assert.deepEqual(ctx.replies, []);
+  assert.deepEqual(store.calls, []);
 });

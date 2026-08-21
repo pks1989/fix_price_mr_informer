@@ -34,7 +34,10 @@ async function tick() {
   }
 }
 
-bot.launch();
+bot.launch().catch((err) => {
+  console.error('Telegram launch failed:', err);
+  process.exit(1);
+});
 tick();
 const pollTimer = setInterval(tick, config.pollIntervalMs);
 

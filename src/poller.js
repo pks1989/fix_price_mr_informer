@@ -3,6 +3,14 @@ import { decideAction } from './decision.js';
 import { isWithinWorkHours } from './workHours.js';
 import { buildDmText, buildGroupText } from './notifier.js';
 
+async function safeSend(sendFn, context) {
+  try {
+    await sendFn();
+  } catch (err) {
+    console.error(`Telegram send failed (${context}):`, err.message);
+  }
+}
+
 async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
   const mrs = await gitlabClient.fetchOpenMergeRequests(config.gitlab);
   const isWorkHours = isWithinWorkHours(now, config.workHours);
@@ -36,18 +44,30 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
         ? store.getChatIdForGitlabUser(derived.responsibleUsername)
         : null;
       if (chatId) {
-        await notifier.notifyUser(
-          chatId,
-          buildDmText({ mr, state: derived.state, isReminder: action.type === 'notify_reminder' }),
+        await safeSend(
+          () => notifier.notifyUser(
+            chatId,
+            buildDmText({ mr, state: derived.state, isReminder: action.type === 'notify_reminder' }),
+          ),
+          `DM to ${derived.responsibleUsername} for MR ${key}`,
         );
       }
-      await notifier.notifyGroup(
-        buildGroupText({ mr, state: derived.state, responsibleUsername: derived.responsibleUsername, registered: Boolean(chatId) }),
+      await safeSend(
+        () => notifier.notifyGroup(
+          buildGroupText({ mr, state: derived.state, responsibleUsername: derived.responsibleUsername, registered: Boolean(chatId) }),
+        ),
+        `group log for MR ${key}`,
       );
-      store.setMr(key, { state: derived.state, lastReminderAt: now.getTime(), title: mr.title, url: mr.url });
+      store.setMr(key, { state: derived.state, lastReminderAt: chatId ? now.getTime() : 0, title: mr.title, url: mr.url });
     } else if (action.type === 'log_transition') {
-      await notifier.notifyGroup(
-        buildGroupText({ mr, state: derived.state, responsibleUsername: derived.responsibleUsername, registered: true }),
+      const registered = Boolean(
+        derived.responsibleUsername && store.getChatIdForGitlabUser(derived.responsibleUsername),
+      );
+      await safeSend(
+        () => notifier.notifyGroup(
+          buildGroupText({ mr, state: derived.state, responsibleUsername: derived.responsibleUsername, registered }),
+        ),
+        `group log for MR ${key}`,
       );
       store.setMr(key, { state: derived.state, lastReminderAt: previous?.lastReminderAt ?? 0, title: mr.title, url: mr.url });
     }
@@ -58,7 +78,10 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
       const previous = store.getMr(key);
       store.deleteMr(key);
       if (previous) {
-        await notifier.notifyGroup(`MR больше не отслеживается (закрыт/смержен): ${previous.title}\n${previous.url}`);
+        await safeSend(
+          () => notifier.notifyGroup(`MR больше не отслеживается (закрыт/смержен): ${previous.title}\n${previous.url}`),
+          `cleanup log for MR ${key}`,
+        );
       }
     }
   }

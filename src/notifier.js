@@ -6,6 +6,7 @@ const STATE_LABELS = {
   [STATES.IN_REVIEW]: 'ревью',
   [STATES.NEEDS_CHANGES]: 'требуются уточнения',
   [STATES.DONE]: 'готово',
+  [STATES.SKIP]: 'вне отслеживания',
 };
 
 const STATE_ACTIONS = {

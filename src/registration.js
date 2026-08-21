@@ -6,11 +6,13 @@ function registerHandlers(bot, store) {
   const awaitingChats = new Set();
 
   bot.start((ctx) => {
+    if (ctx.chat.type !== 'private') return;
     awaitingChats.add(ctx.chat.id);
     return ctx.reply('Привет! Пришли свой логин в GitLab (как в адресе профиля), чтобы получать уведомления по MR.');
   });
 
   bot.on('text', (ctx) => {
+    if (ctx.chat.type !== 'private') return;
     if (!awaitingChats.has(ctx.chat.id)) return;
     const username = normalizeUsernameInput(ctx.message.text);
     if (!username) {
