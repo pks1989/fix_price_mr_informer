@@ -1,4 +1,4 @@
-import { deriveMrState } from './labelState.js';
+import { ACTION_STATES, deriveMrState } from './labelState.js';
 import { decideAction } from './decision.js';
 import { isWithinWorkHours } from './workHours.js';
 import { buildDmText, buildGroupText } from './notifier.js';
@@ -31,6 +31,30 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
     }
     seenKeys.add(key);
 
+    const chatId = derived.responsibleUsername
+      ? store.getChatIdForGitlabUser(derived.responsibleUsername)
+      : null;
+
+    // The responsible person wasn't registered yet when this state was first
+    // announced. Deliver the pending DM the moment they register, without
+    // waiting for the reminder interval and without re-spamming the group.
+    const pendingDmCatchUp = Boolean(
+      previous
+      && previous.state === derived.state
+      && ACTION_STATES.has(derived.state)
+      && previous.dmDelivered === false
+      && chatId,
+    );
+
+    if (pendingDmCatchUp) {
+      await safeSend(
+        () => notifier.notifyUser(chatId, buildDmText({ mr, state: derived.state, isReminder: false })),
+        `DM to ${derived.responsibleUsername} for MR ${key}`,
+      );
+      store.setMr(key, { ...previous, dmDelivered: true });
+      continue;
+    }
+
     const action = decideAction({
       derived,
       previous,
@@ -40,9 +64,6 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
     });
 
     if (action.type === 'notify_new' || action.type === 'notify_reminder') {
-      const chatId = derived.responsibleUsername
-        ? store.getChatIdForGitlabUser(derived.responsibleUsername)
-        : null;
       if (chatId) {
         await safeSend(
           () => notifier.notifyUser(
@@ -58,18 +79,16 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
         ),
         `group log for MR ${key}`,
       );
-      store.setMr(key, { state: derived.state, lastReminderAt: chatId ? now.getTime() : 0, title: mr.title, url: mr.url });
+      store.setMr(key, { state: derived.state, lastReminderAt: now.getTime(), title: mr.title, url: mr.url, dmDelivered: Boolean(chatId) });
     } else if (action.type === 'log_transition') {
-      const registered = Boolean(
-        derived.responsibleUsername && store.getChatIdForGitlabUser(derived.responsibleUsername),
-      );
+      const registered = Boolean(chatId);
       await safeSend(
         () => notifier.notifyGroup(
           buildGroupText({ mr, state: derived.state, responsibleUsername: derived.responsibleUsername, registered }),
         ),
         `group log for MR ${key}`,
       );
-      store.setMr(key, { state: derived.state, lastReminderAt: previous?.lastReminderAt ?? 0, title: mr.title, url: mr.url });
+      store.setMr(key, { state: derived.state, lastReminderAt: previous?.lastReminderAt ?? 0, title: mr.title, url: mr.url, dmDelivered: previous?.dmDelivered ?? true });
     }
   }
 
