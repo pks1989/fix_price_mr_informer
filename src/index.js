@@ -36,7 +36,13 @@ async function tick() {
 
 bot.launch();
 tick();
-setInterval(tick, config.pollIntervalMs);
+const pollTimer = setInterval(tick, config.pollIntervalMs);
 
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+function shutdown(signal) {
+  clearInterval(pollTimer);
+  bot.stop(signal);
+  process.exit(0);
+}
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));
