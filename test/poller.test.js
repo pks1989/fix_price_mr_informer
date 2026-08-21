@@ -7,8 +7,6 @@ import { createStore } from '../src/store.js';
 import { runPollCycle } from '../src/poller.js';
 import { LABELS } from '../src/labelState.js';
 
-const WORK_HOURS = { startHour: 9, endHour: 19, timeZone: 'Europe/Moscow', workDays: [1, 2, 3, 4, 5] };
-// Wednesday 2026-08-19, 12:00 Moscow = 09:00 UTC (inside work hours)
 const NOON_MOSCOW = new Date('2026-08-19T09:00:00Z');
 const REMINDER_MS = 3 * 60 * 60 * 1000;
 
@@ -18,7 +16,6 @@ function baseConfig() {
     allowedUsers: ['alice', 'bob'],
     noLabelGraceMs: 900000,
     reminderIntervalMs: REMINDER_MS,
-    workHours: WORK_HOURS,
   };
 }
 

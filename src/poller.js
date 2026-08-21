@@ -1,6 +1,5 @@
 import { ACTION_STATES, deriveMrState } from './labelState.js';
 import { decideAction } from './decision.js';
-import { isWithinWorkHours } from './workHours.js';
 import { buildDmText, buildGroupText } from './notifier.js';
 
 async function safeSend(sendFn, context) {
@@ -13,7 +12,6 @@ async function safeSend(sendFn, context) {
 
 async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
   const mrs = await gitlabClient.fetchOpenMergeRequests(config.gitlab);
-  const isWorkHours = isWithinWorkHours(now, config.workHours);
   const seenKeys = new Set();
 
   for (const mr of mrs) {
@@ -60,7 +58,6 @@ async function runPollCycle({ gitlabClient, store, notifier, config, now }) {
       previous,
       now,
       reminderIntervalMs: config.reminderIntervalMs,
-      isWorkHours,
     });
 
     if (action.type === 'notify_new' || action.type === 'notify_reminder') {

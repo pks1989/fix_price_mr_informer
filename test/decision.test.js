@@ -12,7 +12,6 @@ test('new action-state MR with no history triggers notify_new', () => {
     previous: null,
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'notify_new' });
 });
@@ -23,7 +22,6 @@ test('new non-action-state MR with no history triggers log_transition', () => {
     previous: null,
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'log_transition' });
 });
@@ -34,7 +32,6 @@ test('state change between two action states triggers notify_new', () => {
     previous: { state: STATES.REVIEW_REQUESTED, lastReminderAt: NOW - 1000 },
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'notify_new' });
 });
@@ -45,31 +42,18 @@ test('unchanged action state within reminder interval does nothing', () => {
     previous: { state: STATES.REVIEW_REQUESTED, lastReminderAt: NOW - 1000 },
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'none' });
 });
 
-test('unchanged action state past reminder interval inside work hours reminds', () => {
+test('unchanged action state past reminder interval reminds', () => {
   const action = decideAction({
     derived: { state: STATES.REVIEW_REQUESTED, responsibleUsername: 'bob' },
     previous: { state: STATES.REVIEW_REQUESTED, lastReminderAt: NOW - REMINDER_MS - 1 },
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'notify_reminder' });
-});
-
-test('unchanged action state past reminder interval outside work hours does nothing', () => {
-  const action = decideAction({
-    derived: { state: STATES.REVIEW_REQUESTED, responsibleUsername: 'bob' },
-    previous: { state: STATES.REVIEW_REQUESTED, lastReminderAt: NOW - REMINDER_MS - 1 },
-    now: new Date(NOW),
-    reminderIntervalMs: REMINDER_MS,
-    isWorkHours: false,
-  });
-  assert.deepEqual(action, { type: 'none' });
 });
 
 test('unchanged non-action state never reminds', () => {
@@ -78,7 +62,6 @@ test('unchanged non-action state never reminds', () => {
     previous: { state: STATES.IN_REVIEW, lastReminderAt: 0 },
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'none' });
 });
@@ -89,7 +72,6 @@ test('MR that becomes skip after being tracked triggers one log_transition', () 
     previous: { state: STATES.NEEDS_CHANGES, lastReminderAt: NOW - 1000 },
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'log_transition' });
 });
@@ -100,7 +82,6 @@ test('MR that stays skip does nothing', () => {
     previous: { state: STATES.SKIP, lastReminderAt: 0 },
     now: new Date(NOW),
     reminderIntervalMs: REMINDER_MS,
-    isWorkHours: true,
   });
   assert.deepEqual(action, { type: 'none' });
 });
